@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>표지어 찾고, 설명 방법 맞히기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#ffffff; --bg2:#f5f5f4; --bg3:#eeece9;
+    --text:#1a1a1a; --text2:#555550; --text3:#999990;
+    --border:rgba(0,0,0,.12); --border2:rgba(0,0,0,.22);
+    --radius:8px; --radius-lg:12px;
+    --info-bg:#e6f1fb; --info-text:#185fa5;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#1c1c1a; --bg2:#252523; --bg3:#2e2e2b;
+      --text:#f0ede8; --text2:#aaa89f; --text3:#666660;
+      --border:rgba(255,255,255,.12); --border2:rgba(255,255,255,.22);
+      --info-bg:#0c2a45; --info-text:#85b7eb;
+    }
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;padding:1.5rem 1rem 3rem}
+  .container{max-width:720px;margin:0 auto}
+  h1{font-size:20px;font-weight:500;margin-bottom:4px}
+  .subtitle{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
+
+  /* 설명 방법 안내 박스 */
+  .guide-box{border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg2);margin-bottom:1.25rem;overflow:hidden}
+  .guide-toggle{width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;text-align:left;font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px}
+  .guide-toggle:hover{background:var(--bg3)}
+  .guide-body{padding:10px 14px 12px;display:none;grid-template-columns:1fr 1fr;gap:6px}
+  .guide-body.open{display:grid}
+  .guide-item{padding:7px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg)}
+  .guide-item .g-name{font-size:12px;font-weight:500;margin-bottom:2px}
+  .guide-item .g-desc{font-size:11px;color:var(--text2);line-height:1.5}
+  .guide-item .g-marker{font-size:11px;color:var(--text3);margin-top:2px;font-style:italic}
+
+  .essay-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+  .tab-btn{padding:5px 13px;border-radius:14px;border:0.5px solid var(--border2);background:var(--bg);font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s}
+  .tab-btn:hover{background:var(--bg2)}
+  .tab-btn.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+  .complete-banner{padding:11px 16px;border-radius:var(--radius);background:#eaf3de;border:0.5px solid #3b6d11;font-size:14px;color:#3b6d11;font-weight:500;margin-bottom:1rem;display:none;align-items:center;gap:8px}
+  .complete-banner.visible{display:flex}
+
+  .score-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding:10px 14px;border-radius:var(--radius);background:var(--bg2);border:0.5px solid var(--border);flex-wrap:wrap}
+  .sc-block{text-align:center;min-width:48px}
+  .sc-num{font-size:22px;font-weight:500}
+  .sc-lbl{font-size:11px;color:var(--text2)}
+  .sc-divider{width:1px;height:32px;background:var(--border)}
+  .sc-msg{font-size:13px;color:var(--text2);flex:1}
+
+  .action-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
+  .act-btn{padding:7px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);font-size:13px;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:background .12s}
+  .act-btn:hover{background:var(--bg2)}
+  .act-btn:active{transform:scale(.98)}
+  .act-btn.locked{border-color:var(--border);color:var(--text3)}
+  .lock-tip{font-size:12px;color:var(--text3);padding:6px 10px;border-radius:var(--radius);background:var(--bg2);border:0.5px solid var(--border);display:none;align-items:center;gap:5px}
+  .lock-tip.visible{display:inline-flex}
+
+  .passage{display:flex;flex-direction:column;gap:12px}
+  .para-card{padding:13px 15px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg)}
+  .para-num{font-size:11px;color:var(--text3);margin-bottom:6px}
+  .para-text{font-size:14px;line-height:1.85;color:var(--text)}
+
+  .word-span{cursor:pointer;border-radius:3px;padding:1px 2px;border-bottom:1.5px solid transparent;transition:background .1s}
+  .word-span:hover{background:var(--info-bg);border-bottom-color:var(--info-text)}
+  .word-span.state-correct{background:#eaf3de;color:#3b6d11;font-weight:500;border-bottom:2px solid #3b6d11;cursor:default}
+  .word-span.state-revealed{background:#fff3cd;color:#856404;font-weight:500;border-bottom:2px solid #ba7517;cursor:default}
+  .method-badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:11px;font-weight:500;margin-left:3px;vertical-align:middle}
+
+  .popup-wrap{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:999}
+  .popup{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:20px 22px;width:min(360px,92vw)}
+  .popup-word{font-size:17px;font-weight:500;margin-bottom:3px}
+  .popup-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+  .method-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .m-btn{padding:9px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);font-size:13px;cursor:pointer;color:var(--text2);text-align:left;transition:all .12s;display:flex;flex-direction:column;gap:2px}
+  .m-btn:hover{background:var(--bg2)}
+  .m-btn .m-name{font-size:13px;display:flex;align-items:center;gap:5px}
+  .m-btn .m-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .m-btn .m-core{font-size:11px;color:var(--text3);font-style:italic;padding-left:13px}
+  .m-btn.correct-ans{background:#eaf3de;border-color:#3b6d11;color:#3b6d11}
+  .m-btn.correct-ans .m-core{color:#5a9a5a}
+  .m-btn.wrong-ans{background:#faece7;border-color:#993c1d;color:#993c1d}
+  .popup-feedback{margin-top:10px;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-align:center;display:none}
+  .feedback-ok{background:#eaf3de;color:#3b6d11}
+  .feedback-no{background:#faece7;color:#993c1d}
+  .popup-close{margin-top:12px;width:100%;padding:8px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);font-size:13px;cursor:pointer;color:var(--text2)}
+  .popup-close:hover{background:var(--bg2)}
+
+  .reveal-answer-list{margin-top:1.5rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+  .ral-head{padding:9px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);font-size:13px;font-weight:500}
+  .ral-body{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+  .ral-row{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:var(--radius);background:var(--bg2);font-size:13px}
+  .ral-word{font-weight:500;min-width:120px}
+  .ral-check{margin-left:auto;font-size:12px;color:#3b6d11}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>표지어 찾고, 설명 방법 맞히기</h1>
+  <p class="subtitle">설명문에서 표지어를 클릭하고, 어떤 설명 방법인지 맞혀 보세요. 모두 맞혀야 정답을 확인할 수 있어요!</p>
+
+  <!-- 설명 방법 안내 -->
+  <div class="guide-box">
+    <button class="guide-toggle" onclick="toggleGuide()">
+      <i class="ti ti-book-2"></i> 8가지 설명 방법 보기 <i class="ti ti-chevron-down" id="guide-arrow"></i>
+    </button>
+    <div class="guide-body" id="guide-body"></div>
+  </div>
+
+  <div class="essay-tabs" id="essay-tabs"></div>
+
+  <div class="complete-banner" id="complete-banner">
+    <i class="ti ti-circle-check"></i>
+    모든 표지어를 맞혔어요! 이제 정답 목록을 확인할 수 있어요.
+  </div>
+
+  <div class="score-bar">
+    <div class="sc-block"><div class="sc-num" id="sc-found">0</div><div class="sc-lbl">맞힘</div></div>
+    <div class="sc-divider"></div>
+    <div class="sc-block"><div class="sc-num" id="sc-total">0</div><div class="sc-lbl">전체</div></div>
+    <div class="sc-divider"></div>
+    <div class="sc-msg" id="sc-msg">표지어를 클릭해 설명 방법을 맞혀 보세요!</div>
+  </div>
+
+  <div class="action-row">
+    <button class="act-btn locked" id="reveal-btn" onclick="revealAll()">
+      <i class="ti ti-lock" id="reveal-icon"></i>
+      <span id="reveal-label">정답 공개</span>
+    </button>
+    <button class="act-btn" onclick="resetAll()"><i class="ti ti-refresh"></i> 다시하기</button>
+    <span class="lock-tip" id="lock-tip"><i class="ti ti-info-circle"></i> 표지어를 모두 맞혀야 열려요</span>
+  </div>
+
+  <div class="passage" id="passage"></div>
+  <div id="reveal-list"></div>
+</div>
+
+<div class="popup-wrap" id="popup" style="display:none" onclick="onPopupBg(event)">
+  <div class="popup">
+    <div class="popup-word" id="pw-word"></div>
+    <div class="popup-sub">이 표지어는 어떤 설명 방법인가요?</div>
+    <div class="method-grid" id="pw-grid"></div>
+    <div class="popup-feedback" id="pw-feedback"></div>
+    <button class="popup-close" onclick="closePopup()">닫기</button>
+  </div>
+</div>
+
+<script>
+// ── 설명 방법 정의 ─────────────────────────────────────────
+// 분류: 여러 대상을 공통 속성으로 묶어 그룹을 만듦 → "묶는다"
+// 구분: 하나의 대상을 기준에 따라 나눔            → "나눈다"
+const METHOD_INFO = {
+  "정의": { core:"~이란, ~을 말한다",    desc:"대상의 뜻이나 본질을 밝힘" },
+  "예시": { core:"예를 들면, 예컨대",    desc:"구체적 사례를 들어 설명함" },
+  "비교": { core:"마찬가지로, 공통점",   desc:"둘 이상 대상의 공통점을 밝힘" },
+  "대조": { core:"이와 다르게, 반면",    desc:"둘 이상 대상의 차이점을 밝힘" },
+  "분류": { core:"~로 묶인다, ~에 속한다", desc:"여러 대상을 공통 속성으로 묶어 그룹을 만듦" },
+  "구분": { core:"~로 나뉜다, 기준으로", desc:"하나의 대상을 기준에 따라 나눔" },
+  "인과": { core:"때문에, 그 결과",      desc:"원인과 결과의 관계를 밝힘" },
+  "분석": { core:"로 구성된다, 로 이루어진다", desc:"구성 요소나 부분으로 나눠 설명함" },
+};
+const METHODS = Object.keys(METHOD_INFO);
+const METHOD_COLOR = {
+  "정의":"#534AB7","예시":"#0F6E56","비교":"#185FA5","대조":"#993C1D",
+  "분류":"#993556","구분":"#BA7517","인과":"#639922","분석":"#A32D2D"
+};
+const METHOD_BG = {
+  "정의":"#EEEDFE","예시":"#E1F5EE","비교":"#E6F1FB","대조":"#FAECE7",
+  "분류":"#FBEAF0","구분":"#FAEEDA","인과":"#EAF3DE","분석":"#FADBD8"
+};
+
+// ── 설명문 데이터 ──────────────────────────────────────────
+// 분류/구분 적용 원칙:
+//   분류: 여러 종류의 것들을 어떤 기준으로 묶어 카테고리를 세울 때
+//         예) 동물을 포유류·조류·파충류로 분류 / 도서관 종류를 유형별로 분류
+//   구분: 하나의 대상(전체)을 기준에 따라 쪼갤 때
+//         예) 미세먼지를 크기에 따라 PM10과 PM2.5로 구분
+//         예) 물의 순환을 육지 순환과 바다 순환으로 구분
+const ESSAYS = [
+ {
+  title:"미세먼지란 무엇인가", sub:"과학·환경",
+  paras:[
+   {
+    text:"날씨 예보를 보다가 '미세먼지 나쁨'이라는 문구가 자주 눈에 띈다. 우리가 숨 쉴 때마다 들이마시는 공기 속에 어떤 물질이 들어 있는지 궁금했던 적이 있을 것이다. 이 글에서는 미세먼지의 정의와 종류, 건강에 미치는 영향을 알기 쉽게 설명하고자 한다.",
+    markers:[]
+   },
+   {
+    // 정의: '미세먼지란 ~이다' → 정의
+    text:"미세먼지란 지름이 10마이크로미터(㎛) 이하인 아주 작은 먼지 입자를 가리킨다. 이처럼 눈에 보이지 않을 만큼 미세한 입자는 공기 중에 오랫동안 떠다니는 특성이 있다.",
+    markers:[{word:"미세먼지란",method:"정의"}]
+   },
+   {
+    // 구분: 미세먼지(하나의 대상)를 크기 기준으로 PM10/PM2.5로 나눔 → 구분
+    // 구분: 발생 원인(하나의 대상)을 인위적/자연적으로 나눔 → 구분
+    text:"미세먼지는 크기를 기준으로 지름 10㎛ 이하인 미세먼지(PM10)와 지름 2.5㎛ 이하인 초미세먼지(PM2.5)로 구분된다. 또한 발생 원인을 기준으로 자동차 매연·공장 굴뚝 같은 인위적 원인과 황사·화산재 같은 자연적 원인으로 나눌 수 있다.",
+    markers:[
+     {word:"기준으로",method:"구분"},
+     {word:"구분된다",method:"구분"},
+     {word:"나눌 수 있다",method:"구분"}
+    ]
+   },
+   {
+    // 인과: 작기 때문에 → 그 결과
+    text:"초미세먼지는 크기가 매우 작기 때문에 코와 기관지에서 걸러지지 않고 폐 깊숙이 침투한다. 그 결과 호흡기 질환과 심혈관 질환을 일으킬 수 있다.",
+    markers:[
+     {word:"때문에",method:"인과"},
+     {word:"그 결과",method:"인과"}
+    ]
+   },
+   {
+    // 예시: 예를 들면
+    text:"예를 들면, 미세먼지 농도가 '나쁨' 수준인 날에는 어린이와 노인이 야외 활동을 자제하도록 권고된다. 또한 마스크를 착용하지 않으면 목이 따갑거나 기침이 나는 증상이 나타나기도 한다.",
+    markers:[{word:"예를 들면",method:"예시"}]
+   },
+   {
+    text:"지금까지 살펴보았듯이, 미세먼지는 크기에 따라 구분되며 그 크기가 작을수록 건강에 미치는 영향이 크다. 대기질 지수를 확인하고 마스크를 착용하는 습관이 우리 건강을 지키는 첫걸음이 될 것이다.",
+    markers:[]
+   }
+  ]
+ },
+ {
+  title:"스마트폰의 구조와 영향", sub:"기술·사회",
+  paras:[
+   {
+    text:"우리나라 청소년의 하루 평균 스마트폰 사용 시간은 약 4.5시간에 달한다. 이처럼 일상 깊숙이 자리 잡은 스마트폰이 어떤 구조로 이루어져 있고, 우리 생활에 어떤 영향을 미치는지 살펴보고자 한다.",
+    markers:[]
+   },
+   {
+    // 정의: 스마트폰이란
+    // 분석: 하드웨어와 소프트웨어로 구성(전체를 요소로 쪼갬)
+    text:"스마트폰이란 통화 기능에 컴퓨터의 연산 기능을 결합한 휴대용 기기이다. 스마트폰은 크게 하드웨어와 소프트웨어로 구성된다. 하드웨어에는 화면, 배터리, 카메라, 프로세서가 포함되며, 소프트웨어에는 운영 체제(OS)와 각종 애플리케이션이 있다.",
+    markers:[
+     {word:"스마트폰이란",method:"정의"},
+     {word:"로 구성된다",method:"분석"}
+    ]
+   },
+   {
+    // 비교: 마찬가지로 / 대조: 이와 다르게, 반면
+    text:"스마트폰과 기존 휴대전화는 마찬가지로 통화와 문자 전송이 가능하며, 둘 다 휴대하기 편한 소형 기기라는 공통점이 있다. 이와 다르게, 기존 휴대전화는 통화·문자만 지원하는 반면 스마트폰은 인터넷, 동영상, 내비게이션 등 수백 가지 기능을 수행한다.",
+    markers:[
+     {word:"마찬가지로",method:"비교"},
+     {word:"이와 다르게",method:"대조"},
+     {word:"반면",method:"대조"}
+    ]
+   },
+   {
+    // 인과: 늘어난 결과 / 예시: 예를 들면
+    text:"스마트폰 사용이 늘어난 결과, 언제 어디서나 정보에 접근하기 편리해졌다. 그러나 지나친 사용은 수면 장애나 집중력 저하를 일으키기도 한다. 예를 들면, 잠들기 전 스마트폰을 사용하면 블루라이트가 수면 호르몬 분비를 방해한다.",
+    markers:[
+     {word:"늘어난 결과",method:"인과"},
+     {word:"예를 들면",method:"예시"}
+    ]
+   },
+   {
+    // 비교: 마찬가지로 / 대조: 이에 반하여
+    text:"전통적인 교과서 학습과 비교하면 마찬가지로 지식을 전달하는 매체라는 공통점이 있다. 이에 반하여, 스마트폰은 영상, 게임, 시뮬레이션 등 다양한 형태로 학습을 지원한다.",
+    markers:[
+     {word:"마찬가지로",method:"비교"},
+     {word:"이에 반하여",method:"대조"}
+    ]
+   },
+   {
+    text:"스마트폰은 하드웨어와 소프트웨어로 구성된 복합 기기로, 우리 생활을 크게 편리하게 만들었다. 그러나 과도한 의존은 건강 문제로 이어질 수 있으므로, 올바른 사용 습관을 기르는 것이 무엇보다 중요하다.",
+    markers:[]
+   }
+  ]
+ },
+ {
+  title:"도서관의 종류와 역할", sub:"사회·문화",
+  paras:[
+   {
+    // 정의: 도서관이란
+    text:"여러분은 마지막으로 도서관에 간 것이 언제인가? 도서관이란 책, 잡지, 디지털 자료 등 다양한 정보를 수집·보존하여 누구나 이용할 수 있도록 제공하는 시설이다. 이 글에서는 도서관의 종류와 역할을 살펴보겠다.",
+    markers:[{word:"도서관이란",method:"정의"}]
+   },
+   {
+    // 분류: 여러 종류의 도서관을 운영 주체라는 기준으로 묶어 카테고리화 → 분류
+    // (공공/학교/대학/전문이라는 서로 다른 유형들을 하나의 체계로 묶음)
+    text:"도서관은 운영 주체에 따라 공공도서관, 학교도서관, 대학도서관, 전문도서관으로 분류된다. 각 유형은 서로 다른 이용 대상과 목적을 가진 독립적인 카테고리이다.",
+    markers:[{word:"분류된다",method:"분류"}]
+   },
+   {
+    // 예시: 예를 들면
+    text:"예를 들면, 국립중앙도서관은 국가를 대표하는 공공도서관으로 전 국민이 이용할 수 있으며, 국회도서관은 입법 활동을 지원하는 전문도서관의 대표적인 예이다.",
+    markers:[{word:"예를 들면",method:"예시"}]
+   },
+   {
+    text:"도서관은 독서 교육, 강연, 전시 등 다양한 문화 프로그램을 제공한다. 문화체육관광부 통계에 따르면 2022년 전국 공공도서관 수는 1,176개, 연간 이용자는 약 2억 5천만 명에 달한다.",
+    markers:[]
+   },
+   {
+    // 대조: 이에 반하여, 반면
+    text:"전통적인 종이책 도서관은 직접 방문해야 하지만, 이에 반하여 디지털 도서관은 인터넷만 있으면 장소에 구애받지 않고 이용할 수 있다. 또한 종이책 도서관은 조용한 열람 공간을 제공하는 반면, 디지털 도서관은 24시간 언제나 접근 가능하다.",
+    markers:[
+     {word:"이에 반하여",method:"대조"},
+     {word:"반면",method:"대조"}
+    ]
+   },
+   {
+    text:"도서관은 종류에 따라 운영 방식이 다르지만, 모든 도서관은 지식과 정보를 제공한다는 공통된 목적을 지닌다. 도서관을 가까이하는 습관은 평생 학습의 밑거름이 되므로, 오늘 당장 가까운 도서관에 방문해 보기를 권한다.",
+    markers:[]
+   }
+  ]
+ },
+ {
+  title:"물의 순환 과정", sub:"과학·자연",
+  paras:[
+   {
+    text:"우리가 마시는 물은 어디서 왔을까? 빗물이 강으로 흘러들고, 강물이 바다로 가고, 바다의 물은 다시 하늘로 올라가 구름이 된다. 이처럼 물은 한 곳에 머물지 않고 끊임없이 돌고 돈다. 물의 순환 과정이 왜 중요한지 단계별로 살펴보겠다.",
+    markers:[]
+   },
+   {
+    // 정의: 물의 순환이란 / 분석: 네 단계로 이루어진다(전체→요소)
+    text:"물의 순환이란 지구에 존재하는 물이 증발, 응결, 강수, 유출의 과정을 반복하며 끊임없이 이동하는 현상을 말한다. 물의 순환은 크게 네 단계로 이루어진다. 첫째 증발, 둘째 응결, 셋째 강수, 넷째 유출이 그것이다.",
+    markers:[
+     {word:"물의 순환이란",method:"정의"},
+     {word:"로 이루어진다",method:"분석"}
+    ]
+   },
+   {
+    // 인과: 때문에, 그 결과
+    text:"태양 에너지가 지표면의 물을 가열하기 때문에 수분이 수증기로 변하는 '증발'이 일어난다. 수증기가 높이 올라가면 온도가 낮아지고, 그 결과 작은 물방울로 뭉쳐 구름이 되는 '응결'이 발생한다.",
+    markers:[
+     {word:"때문에",method:"인과"},
+     {word:"그 결과",method:"인과"}
+    ]
+   },
+   {
+    // 예시: 예컨대
+    text:"예컨대, 여름철 냉수를 담은 컵 겉면에 물방울이 맺히는 현상이 바로 응결이며, 빨래가 햇빛에 마르는 것은 증발의 대표적인 예이다.",
+    markers:[{word:"예컨대",method:"예시"}]
+   },
+   {
+    // 구분: 물의 순환(하나의 현상)을 육지/바다로 나눔 → 구분
+    // 대조: 반면
+    text:"물의 순환은 육지 순환과 바다 순환으로 구분된다. 육지에서는 강수→유출→지하수→증발의 경로를 따르는 반면, 바다에서는 증발량이 강수량보다 많아 육지로 끊임없이 물이 공급된다.",
+    markers:[
+     {word:"구분된다",method:"구분"},
+     {word:"반면",method:"대조"}
+    ]
+   },
+   {
+    text:"물의 순환은 증발→응결→강수→유출이 원인과 결과로 연결된 과정이다. 이 순환이 있기에 생명체는 물을 지속적으로 공급받을 수 있다. 물을 아껴 쓰는 작은 실천이 건강한 물의 순환을 지키는 길임을 기억하자.",
+    markers:[]
+   }
+  ]
+ },
+ {
+  title:"전통시장과 대형마트", sub:"경제·사회",
+  paras:[
+   {
+    // 정의: 전통시장이란
+    text:"장을 보러 갈 때 여러분은 어디를 선택하는가? 전통시장이란 오래전부터 지역 주민들이 생필품을 사고파는 장소로, 소규모 점포와 노점이 밀집한 시장이다. 이 글은 두 유통 공간을 비교·대조하여 올바른 소비 선택에 도움을 주고자 쓰게 되었다.",
+    markers:[{word:"전통시장이란",method:"정의"}]
+   },
+   {
+    // 비교: 마찬가지로, 공통점
+    text:"전통시장과 대형마트는 마찬가지로 소비자가 직접 방문하여 생필품을 구매하는 소매 유통 시설이라는 공통점이 있다. 또한 둘 다 다양한 상품을 한자리에서 고를 수 있다는 점도 같다.",
+    markers:[
+     {word:"마찬가지로",method:"비교"},
+     {word:"공통점이 있다",method:"비교"}
+    ]
+   },
+   {
+    // 대조: 이와 다르게, 반면, 이에 반하여
+    text:"이와 다르게, 전통시장은 상인과 가격을 흥정할 수 있고 인간적인 정이 오가는 반면, 대형마트는 정가제를 채택하며 셀프 서비스 방식으로 운영된다. 이에 반하여 대형마트는 전국·수입 상품을 다양하게 구비한다.",
+    markers:[
+     {word:"이와 다르게",method:"대조"},
+     {word:"반면",method:"대조"},
+     {word:"이에 반하여",method:"대조"}
+    ]
+   },
+   {
+    // 예시: 예를 들면
+    text:"예를 들면, 우리 지역 전통시장에서는 제철 채소를 신선하게 저렴하게 구입할 수 있으며, 이마트·홈플러스 같은 대형마트는 주차 편의와 다양한 브랜드 상품이 강점이다.",
+    markers:[{word:"예를 들면",method:"예시"}]
+   },
+   {
+    // 구분: 전통시장(하나의 대상)을 운영 방식 기준으로 상설/정기/야시장으로 나눔 → 구분
+    text:"전통시장은 운영 방식에 따라 상설시장, 정기시장(5일장), 야시장으로 구분된다. 상설시장은 매일 운영되고, 5일장은 정해진 날짜에만 열리며, 야시장은 저녁 시간대에 특화된 형태이다.",
+    markers:[{word:"구분된다",method:"구분"}]
+   },
+   {
+    text:"전통시장과 대형마트는 각각 고유한 장점이 있어 어느 한쪽이 우월하다고 단정 지을 수 없다. 지역 경제 활성화를 위해 전통시장을 의식적으로 이용하는 것도 가치 있는 소비 실천이다.",
+    markers:[]
+   }
+  ]
+ },
+ {
+  title:"독서의 유형과 효과", sub:"국어·교육",
+  paras:[
+   {
+    // 정의: 독서란
+    text:"독서가 좋다는 말은 수없이 들었지만, 왜 좋은지 잘 모르는 경우가 많다. 독서란 글을 읽으며 내용과 의미를 이해하는 행위이다. 이 글은 독서의 유형을 나누어 살피고 꾸준한 독서가 우리에게 어떤 변화를 가져다주는지 설명하기 위해 작성하였다.",
+    markers:[{word:"독서란",method:"정의"}]
+   },
+   {
+    // 분류: 정보·감상·학습 독서라는 서로 다른 유형들을 목적이라는 기준으로 묶어 카테고리화 → 분류
+    text:"독서는 목적에 따라 정보 독서, 감상 독서, 학습 독서로 분류된다. 정보 독서는 지식 습득, 감상 독서는 즐거움과 감동, 학습 독서는 교과 내용 이해라는 서로 다른 목적을 가진 유형들이다.",
+    markers:[{word:"분류된다",method:"분류"}]
+   },
+   {
+    // 구분: 통독/속독/발췌독 — 읽기라는 하나의 행위를 방식 기준으로 나눔 → 구분
+    text:"읽기 방식을 기준으로 독서는 통독(通讀), 속독(速讀), 발췌독(拔萃讀)으로 구분된다. 통독은 처음부터 끝까지 읽기, 속독은 빠르게 훑기, 발췌독은 필요한 부분만 골라 읽기이다.",
+    markers:[
+     {word:"기준으로",method:"구분"},
+     {word:"구분된다",method:"구분"}
+    ]
+   },
+   {
+    // 인과: 결과를 가져온다
+    text:"꾸준한 독서는 어휘력과 문해력을 높이는 결과를 가져온다. 다양한 글을 읽으면 배경지식이 쌓이고, 이는 새로운 글을 이해하는 데 다시 도움을 준다.",
+    markers:[{word:"결과를 가져온다",method:"인과"}]
+   },
+   {
+    // 대조: 반면, 이와 다르게 / 예시: 예를 들면
+    text:"종이책 독서는 시각 피로가 적고 집중력이 유지되는 반면, 이와 다르게 전자책 독서는 접근이 편리하지만 눈이 쉽게 피로해질 수 있다. 예를 들면, 잠들기 전 전자책보다 종이책을 읽는 것이 수면 질에 더 유리하다는 연구도 있다.",
+    markers:[
+     {word:"반면",method:"대조"},
+     {word:"이와 다르게",method:"대조"},
+     {word:"예를 들면",method:"예시"}
+    ]
+   },
+   {
+    text:"독서는 목적과 방식에 따라 다양하게 이루어지며, 꾸준히 실천할 때 언어 능력과 사고력이 크게 향상된다. 오늘부터 하루 20분이라도 책을 펼치는 습관을 길러 보자.",
+    markers:[]
+   }
+  ]
+ }
+];
+
+// ── 상태 ─────────────────────────────────────────────────
+let curE = 0, state = {}, activePopup = null, revealedEssays = {};
+
+function key(pi, word) { return `${curE}-${pi}-${word}`; }
+function totalMarkers() { return ESSAYS[curE].paras.reduce((s,p) => s+p.markers.length, 0); }
+function foundCount() {
+  return ESSAYS[curE].paras.reduce((s,p,pi) =>
+    s + p.markers.filter(m => state[key(pi,m.word)] === "correct").length, 0);
+}
+function isAllCorrect() { return foundCount() === totalMarkers(); }
+
+// ── 안내 박스 ─────────────────────────────────────────────
+function buildGuide() {
+  document.getElementById("guide-body").innerHTML = METHODS.map(m => `
+    <div class="guide-item">
+      <div class="g-name" style="color:${METHOD_COLOR[m]}">${m}</div>
+      <div class="g-desc">${METHOD_INFO[m].desc}</div>
+      <div class="g-marker">${METHOD_INFO[m].core}</div>
+    </div>`).join("");
+}
+function toggleGuide() {
+  const b = document.getElementById("guide-body");
+  const a = document.getElementById("guide-arrow");
+  const open = b.classList.toggle("open");
+  a.className = open ? "ti ti-chevron-up" : "ti ti-chevron-down";
+}
+
+// ── 탭 ───────────────────────────────────────────────────
+function renderTabs() {
+  document.getElementById("essay-tabs").innerHTML =
+    ESSAYS.map((e,i) =>
+      `<button class="tab-btn${i===curE?" active":""}" onclick="selectEssay(${i})">${i+1}. ${e.title}</button>`
+    ).join("");
+}
+function selectEssay(i) {
+  curE = i;
+  document.getElementById("reveal-list").innerHTML = "";
+  document.getElementById("complete-banner").classList.remove("visible");
+  renderTabs(); renderPassage(); updateScore(); updateRevealBtn();
+}
+
+// ── 텍스트 토크나이즈 ─────────────────────────────────────
+function escH(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escA(s) { return s.replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+
+function tokenize(text, markers, pi) {
+  if (!markers.length) return escH(text);
+  const sorted = [...markers].sort((a,b) => b.word.length - a.word.length);
+  let segs = [{t:text, isM:false, word:""}];
+  for (const m of sorted) {
+    const next = [];
+    for (const seg of segs) {
+      if (seg.isM) { next.push(seg); continue; }
+      const parts = seg.t.split(m.word);
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i]) next.push({t:parts[i], isM:false, word:""});
+        if (i < parts.length-1) next.push({t:m.word, isM:true, word:m.word});
+      }
+    }
+    segs = next;
+  }
+  return segs.map(seg => {
+    if (!seg.isM) return escH(seg.t);
+    const k = key(pi, seg.word);
+    const st = state[k];
+    const rev = revealedEssays[curE];
+    let cls = "word-span";
+    if (st === "correct") cls += " state-correct";
+    else if (rev) cls += " state-revealed";
+    const m = markers.find(m => m.word === seg.word);
+    const mc = METHOD_COLOR[m.method], mb = METHOD_BG[m.method];
+    const badge = (st === "correct" || rev)
+      ? `<span class="method-badge" style="background:${mb};color:${mc}">${m.method}</span>` : "";
+    const clickable = !rev && st !== "correct";
+    return `<span class="${cls}"${clickable ? ` onclick="openPopup(${pi},'${escA(seg.word)}')"` : ""}>${escH(seg.t)}</span>${badge}`;
+  }).join("");
+}
+
+function renderPassage() {
+  document.getElementById("passage").innerHTML =
+    ESSAYS[curE].paras.map((p,pi) => `
+      <div class="para-card">
+        <div class="para-num">문단 ${pi+1}${p.markers.length ? ` — 표지어 ${p.markers.length}개` : ""}</div>
+        <div class="para-text">${tokenize(p.text, p.markers, pi)}</div>
+      </div>`).join("");
+}
+
+// ── 점수 / 버튼 ───────────────────────────────────────────
+function updateScore() {
+  const found = foundCount(), total = totalMarkers();
+  document.getElementById("sc-found").textContent = found;
+  document.getElementById("sc-total").textContent = total;
+  const pct = total ? Math.round(found/total*100) : 0;
+  const msgs = ["표지어를 클릭해 설명 방법을 맞혀 보세요!","잘 찾고 있어요!","절반 이상 찾았어요!","거의 다 왔어요!","모두 맞혔어요! 정답 공개 버튼이 열렸어요."];
+  document.getElementById("sc-msg").textContent = msgs[Math.min(Math.floor(pct/25), 4)];
+  document.getElementById("complete-banner").classList.toggle("visible", found===total && total>0);
+}
+function updateRevealBtn() {
+  const all = isAllCorrect();
+  document.getElementById("reveal-btn").classList.toggle("locked", !all);
+  document.getElementById("reveal-icon").className = all ? "ti ti-eye" : "ti ti-lock";
+}
+
+// ── 팝업 ─────────────────────────────────────────────────
+function openPopup(pi, word) {
+  const k = key(pi, word);
+  if (state[k] === "correct") return;
+  const marker = ESSAYS[curE].paras[pi].markers.find(m => m.word === word);
+  if (!marker) return;
+  activePopup = {k, pi, word, method: marker.method};
+  document.getElementById("pw-word").textContent = `"${word}"`;
+  const fb = document.getElementById("pw-feedback");
+  fb.style.display = "none"; fb.className = "popup-feedback";
+  const wrong = METHODS.filter(m => m !== marker.method).sort(() => Math.random()-.5).slice(0,3);
+  const choices = [marker.method, ...wrong].sort(() => Math.random()-.5);
+  document.getElementById("pw-grid").innerHTML = choices.map(m => `
+    <button class="m-btn" onclick="chooseMethod('${m}')">
+      <span class="m-name"><span class="m-dot" style="background:${METHOD_COLOR[m]}"></span>${m}</span>
+      <span class="m-core">${METHOD_INFO[m].core}</span>
+    </button>`).join("");
+  document.getElementById("popup").style.display = "flex";
+}
+function chooseMethod(chosen) {
+  if (!activePopup) return;
+  const {k, method} = activePopup;
+  const correct = chosen === method;
+  document.querySelectorAll(".m-btn").forEach(btn => {
+    const nm = btn.querySelector(".m-name");
+    const label = nm ? nm.textContent.trim() : "";
+    if (label === method) btn.classList.add("correct-ans");
+    if (label === chosen && !correct) btn.classList.add("wrong-ans");
+    btn.disabled = true;
+  });
+  const fb = document.getElementById("pw-feedback");
+  fb.style.display = "block";
+  if (correct) {
+    fb.className = "popup-feedback feedback-ok";
+    fb.textContent = "✓ 정답이에요!";
+    state[k] = "correct";
+    setTimeout(() => { closePopup(); renderPassage(); updateScore(); updateRevealBtn(); }, 700);
+  } else {
+    fb.className = "popup-feedback feedback-no";
+    fb.textContent = `✗ 아쉬워요. 정답은 '${method}'예요.`;
+  }
+}
+function onPopupBg(e) { if (e.target===document.getElementById("popup")) closePopup(); }
+function closePopup() { document.getElementById("popup").style.display="none"; activePopup=null; }
+
+// ── 정답 공개 / 리셋 ──────────────────────────────────────
+function revealAll() {
+  if (!isAllCorrect()) {
+    const tip = document.getElementById("lock-tip");
+    tip.classList.add("visible");
+    setTimeout(() => tip.classList.remove("visible"), 2200);
+    return;
+  }
+  revealedEssays[curE] = true;
+  renderPassage();
+  let rows = "";
+  ESSAYS[curE].paras.forEach((p,pi) => {
+    p.markers.forEach(m => {
+      const mc=METHOD_COLOR[m.method], mb=METHOD_BG[m.method];
+      rows += `<div class="ral-row">
+        <span class="ral-word">"${m.word}"</span>
+        <span class="method-badge" style="background:${mb};color:${mc}">${m.method}</span>
+        <span class="ral-check">✓</span>
+      </div>`;
+    });
+  });
+  document.getElementById("reveal-list").innerHTML = `
+    <div class="reveal-answer-list">
+      <div class="ral-head">표지어 전체 정답 목록</div>
+      <div class="ral-body">${rows}</div>
+    </div>`;
+}
+function resetAll() {
+  ESSAYS[curE].paras.forEach((p,pi) => p.markers.forEach(m => delete state[key(pi,m.word)]));
+  delete revealedEssays[curE];
+  document.getElementById("reveal-list").innerHTML = "";
+  document.getElementById("complete-banner").classList.remove("visible");
+  document.getElementById("popup").style.display = "none";
+  activePopup = null;
+  renderPassage(); updateScore(); updateRevealBtn();
+}
+
+// ── init ─────────────────────────────────────────────────
+buildGuide(); renderTabs(); renderPassage(); updateScore(); updateRevealBtn();
+</script>
+</body>
+</html>
